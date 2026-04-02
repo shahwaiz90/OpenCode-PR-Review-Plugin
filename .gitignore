@@ -1,0 +1,13 @@
+.gradle/
+build/
+.idea/
+.intellijPlatform/
+*.log
+*.txt
+.env
+local.properties
+out/
+gradle.properties
+run/
+!gradle-wrapper.jar
+!gradle-wrapper.properties

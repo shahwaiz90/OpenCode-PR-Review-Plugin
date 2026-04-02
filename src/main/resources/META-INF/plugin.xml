@@ -1,0 +1,60 @@
+<idea-plugin>
+    <id>com.opencode.plugin</id>
+    <name>OpenCode PR Review</name>
+    <vendor email="ahmadshahwaiz@gmail.com" url="https://github.com/OpenCode">OpenCode</vendor>
+
+    <description><![CDATA[
+    <h1>OpenCode PR Review</h1>
+    <p>Perform intelligent, local AI-powered code reviews directly inside Android Studio. OpenCode integrates with your local development environment via REST or CLI.</p>
+    <h2>Key Features:</h2>
+    <ul>
+        <li><b>Selection Review:</b> Instantly analyze any function or code snippet.</li>
+        <li><b>Git Diff Review:</b> Review your changes before committing.</li>
+        <li><b>Streaming Responses:</b> Fast, real-time feedback with syntax highlighting.</li>
+        <li><b>Custom Persona:</b> Configure your AI reviewer's tone and expertise.</li>
+    </ul>
+    ]]></description>
+
+    <change-notes><![CDATA[
+    <ul>
+      <li>Initial release of the OpenCode AI Review plugin.</li>
+      <li>Added support for REST and CLI adapters.</li>
+      <li>Added Tool Window for streaming review results.</li>
+      <li>Added context menu actions for functions and files.</li>
+    </ul>
+    ]]></change-notes>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+    <depends>org.jetbrains.kotlin</depends>
+    <depends>com.intellij.modules.lang</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="com.opencode.settings.AppSettingsState"/>
+        <applicationConfigurable instance="com.opencode.settings.AppSettingsConfigurable"
+                                 id="com.opencode.settings.AppSettingsConfigurable"
+                                 displayName="OpenCode PR Review"/>
+                                 
+        <toolWindow id="OpenCode PR Review" secondary="true" 
+                    anchor="right" factoryClass="com.opencode.ui.ReviewToolWindowFactory"/>
+        
+        <notificationGroup id="OpenCode Notifications" displayType="BALLOON"/>
+        
+        <codeInsight.lineMarkerProvider language="kotlin" implementationClass="com.opencode.editor.ReviewLineMarkerProvider"/>
+        <codeInsight.lineMarkerProvider language="JAVA" implementationClass="com.opencode.editor.ReviewLineMarkerProvider"/>
+    </extensions>
+
+    <actions>
+        <group id="OpenCode.ContextMenu" text="OpenCode PR Review" popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <action id="OpenCode.ReviewFunction" class="com.opencode.actions.ReviewFunctionAction"
+                    text="Review Function" description="Review this function using OpenCode">
+                <keyboard-shortcut keymap="$default" first-keystroke="shift alt R"/>
+            </action>
+            <action id="OpenCode.ReviewFile" class="com.opencode.actions.ReviewFileAction"
+                    text="Review Entire File" description="Review the entire file using OpenCode"/>
+            <action id="OpenCode.ReviewGitDiff" class="com.opencode.actions.ReviewGitDiffAction"
+                    text="Review Git Diff" description="Review unstaged Git changes using OpenCode"/>
+        </group>
+    </actions>
+</idea-plugin>

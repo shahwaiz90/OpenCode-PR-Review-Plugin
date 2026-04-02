@@ -1,0 +1,1 @@
+fun calculateAverage(numbers: List<Int>?): Int { return numbersecho 'fun calculateAverage(numbers: List<Int>?): Int { sum = 0; for (n in numbers) { sum += n }; return sum / numbers.size }' | opencode review --model openai/gpt-oss-120b --prompt Review this code --stream.size }
