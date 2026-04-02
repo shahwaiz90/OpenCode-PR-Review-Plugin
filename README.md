@@ -1,72 +1,66 @@
-# 🚀 OpenCode PR Review Plugin for Android Studio
+# 🛡️ OpenCode PR Review - Enterprise AI Auditor
 
-Welcome to **OpenCode PR Review**! This is a professional-grade, AI-powered code review tool designed to sit directly inside your Android Studio or IntelliJ IDEA. It catch bugs, identifies performance bottlenecks, and enforces clean architecture standards before you ever submit a Pull Request.
-
----
-
-## ✨ Key Features
-
-- **🛡️ Elite AI PR Reviewer**: Uses an expert Senior Android Developer persona to scan for memory leaks, logic bugs, and clean architecture violations.
-- **⚡ Surgical Fixes**: Automatically suggests and applies full code replacements based on the exact function or selection you're reviewing.
-- **📑 HTML Dashboard**: Generate a premium, high-fidelity HTML report of your overall review with one click.
-- **🎯 Contextual Scopes**: Intelligent enough to know if you're reviewing a single Function, a Selection, the Whole File, or a Git Diff.
-- **📝 Automatic KDocs**: Enforces and generates high-quality KDoc documentation (`/** ... */`) for every fix.
-- **🎨 Premium UI**: A modern, high-readability tool window with soft wraps and syntax highlighting.
+**OpenCode PR Review** is a high-performance Android Studio plugin that transforms your IDE into a **Rigorous Technical Lead**. It uses local AI models to perform deep architectural, performance, and security audits—complete with **Dynamic Weighting**, **Mentorship Guidance**, and **Professional PDF-Ready Reports**.
 
 ---
 
-## 🛠 Prerequisites
-
-Ensure you have:
-*   **Android Studio** or **IntelliJ IDEA** (2023.2+) installed.
-*   **Ollama** running locally (default: `http://localhost:11434`).
+## 🚀 Key Features
+- **🕵️ Expert Software Engineering Auditor**: A specialized AI persona that hunts for Main-thread blocking, string-concatenation leaks, and architectural violations.
+- **⚖️ Dynamic Audit Dashboard**: Manually adjust weights for **Code Quality**, **Performance**, **Security**, and **Best Practices** in your settings.
+- **🏁 Custom Passing Thresholds**: Set your own quality bar (e.g., Reject any PR with a score < 80).
+- **👨‍🏫 Growth Mentorship**: Every finding includes "Growth Guidance" with links to official **Kotlin** and **Android** documentation.
+- **📊 Enterprise Audit Dashboard**: Export beautiful, print-ready HTML reports with executive summaries and professional line-numbered code cards.
+- **🧪 AI Playground**: Test your prompt scripts and weighting logic in a real-time sandbox before deploying them to your team.
 
 ---
 
-## 🚀 Getting Started
+## 🏗️ Getting Started
 
-### 1. Launching the Plugin
-To run the plugin in a sandbox IDE for testing:
+### 1. Setup Local AI (Ollama)
+OpenCode PR Review works best with a local, private LLM for absolute code security.
+- **Download Ollama**: [ollama.com](https://ollama.com/)
+- **Pull a Coding Model**: Open your terminal and run:
+  ```bash
+  ollama pull qwen2.5-coder:latest
+  ```
+- **Verify**: Ensure the server is running at `http://localhost:11434`.
+
+### 2. Configure the Plugin
+1. Open **Android Studio** → **Settings / Preferences**.
+2. Navigate to **Tools** → **OpenCode PR Review**.
+3. Set your **Ollama Server URL**: `http://localhost:11434`.
+4. Choose your **Active AI Model**: `qwen2.5-coder:latest`.
+5. Dial in your **Audit Weighting & Thresholds** to match your team’s standards.
+6. Click **Apply**.
+
+---
+
+## 🤝 Contribution Guide (What Files Do What)
+OpenCode is built for open-source growth! Here is where the magic happens:
+
+- **`src/main/kotlin/com/opencode/settings/AppSettingsState.kt`**: The "Source of Truth." This file contains the **Expert Auditor System Prompt** and the persistence logic for your weights and thresholds.
+- **`src/main/kotlin/com/opencode/adapter/RestAdapter.kt`**: The communication engine. This file bridges the plugin to Ollama, handles streaming, and injects your dynamic weighting context into every request.
+- **`src/main/kotlin/com/opencode/util/HtmlReportGenerator.kt`**: The report architect. This transforms AI Markdown into the **Professional Audit Dashboard** (handling tables, badges, and line numbers).
+- **`src/main/kotlin/com/opencode/ui/ReviewPanel.kt`**: The visual heart. It handles real-time streaming, the "Apply Fix" logic, and the "Expert Mentor" UI sections.
+- **`src/main/kotlin/com/opencode/actions/`**: Action triggers for right-click context menus, gutter icons, and tool-window actions.
+
+---
+
+## 🛠️ Build & Run
+To compile the plugin from source:
+```bash
+./gradlew buildPlugin
+```
+To launch a sandbox IDE with the latest changes:
 ```bash
 ./gradlew runIde
 ```
 
-### 2. Configuration
-Go to **Settings → OpenCode PR Review** to:
-- Set your **Ollama Base URL** and **Active Model**.
-- Test your connection with one click.
-- Customize the **Elite PR Review Rules** to match your team's standards.
-- Use the **AI Playground** to test your prompts against real code snippets.
-
 ---
 
-## 📖 How to Use
+## 🎯 Our Mission
+Our goal is to help developers grow while ensuring enterprise-level code quality. We believe in strict enforcement paired with compassionate mentorship.
 
-### 1. Reviewing Code
--   **Gutter Icon**: Click the Magnifying Glass 🔍 next to any function to start a surgical review.
--   **Context Menu**: Right-click any selection or file -> **OpenCode PR Review**.
--   **Git Diff**: Right-click -> **Review Git Diff** to analyze your unstaged changes.
-
-### 2. Applying Fixes
--   **Apply Fix**: Replaces the original code with the AI's suggested professional version.
--   **Just KDocs**: Only inserts the documentation above your function without changing logic.
--   **Export HTML**: Generates a beautiful HTML report and opens it in your browser.
-
+### You feel me? 🛡️✨🏢
 ---
-
-## 🏗 Project Architecture
-
-- **`com.opencode.adapter`**: Logic for streaming responses from local LLMs.
-- **`com.opencode.ui`**: Premium UI components and the HTML Dashboard generator.
-- **`com.opencode.actions`**: Context-aware review actions for IDE integration.
-- **`com.opencode.settings`**: Persistent state management for your custom rules.
-
----
-
-## 🛫 Publishing
-To build the distribution ZIP:
-```bash
-./gradlew buildPlugin
-```
-
-Happy code reviewing! 🛡️🚀
+*OpenCode PR Review is an open-source project by Ahmad Shahwaiz and the community.*

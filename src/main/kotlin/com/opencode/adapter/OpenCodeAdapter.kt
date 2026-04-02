@@ -13,7 +13,7 @@ interface OpenCodeAdapter {
      * @param context Additional metadata about the code (e.g. filename, git context).
      * @return A Flow that emits response chunks line by line.
      */
-    fun review(content: String, context: String): Flow<String>
+    suspend fun review(content: String, context: String): Flow<String>
     
     /**
      * Checks if the adapter can connect to the OpenCode engine.

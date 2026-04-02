@@ -14,7 +14,7 @@ import java.io.BufferedReader
  */
 class CliAdapter(private val settings: AppSettingsState) : OpenCodeAdapter {
 
-    override fun review(content: String, context: String): Flow<String> = flow {
+    override suspend fun review(content: String, context: String): Flow<String> = flow {
        val command = settings.cliCommandPath.split(" ").toMutableList().apply {
            add("review")
            add("--file")

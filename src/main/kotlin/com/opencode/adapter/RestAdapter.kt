@@ -1,78 +1,64 @@
 package com.opencode.adapter
 
 import com.opencode.settings.AppSettingsState
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.utils.io.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.net.http.HttpResponse.BodyHandlers
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.time.Duration
+import java.nio.charset.StandardCharsets
 
 /**
- * REST adapter that uses Anthropic-style 'messages' API for code reviews.
- * Supports streaming by reading 'content_block_delta' lines from the response body.
+ * Communicates with local AI models (via Ollama or similar REST APIs).
+ * Now supports dynamic weighting and audit thresholds.
  */
-class RestAdapter(private val settings: AppSettingsState, private val customBaseUrl: String? = null) : OpenCodeAdapter {
-    private val client = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(10))
-        .build()
-    
-    private val baseUrl: String
-        get() = (customBaseUrl ?: settings.restBaseUrl).removeSuffix("/")
+class RestAdapter(private val settings: AppSettingsState) : OpenCodeAdapter {
 
-    override fun review(content: String, context: String): Flow<String> = flow {
-        val modelName = settings.modelName
-        val endpoint = "$baseUrl/api/chat"
-        val escapedPrompt = escape(settings.systemPrompt)
-        val escapedContent = escape(content)
+    override suspend fun review(content: String, context: String): Flow<String> = flow {
+        val client = HttpClient(CIO)
+        val url = "${settings.restBaseUrl}/api/chat"
         
-        val payload = """
-            {
-                "model": "$modelName",
-                "messages": [
-                    { "role": "system", "content": "$escapedPrompt" },
-                    { "role": "user", "content": "Review this Kotlin code:\n\n```kotlin\n$escapedContent\n```" }
-                ],
-                "stream": true
-            }
+        // Dynamic Weighted Context
+        val weightingContext = """
+            [DYNAMIC AUDIT METRICS]
+            - Code Quality: max ${settings.weightCodeQuality} points
+            - Best Practices: max ${settings.weightBestPractices} points
+            - Performance: max ${settings.weightPerformance} points
+            - Readability: max ${settings.weightReadability} points
+            - Security: max ${settings.weightSecurity} points
+            - PASSING THRESHOLD: ${settings.passingThreshold}
+            
+            (Reject if total score < ${settings.passingThreshold})
         """.trimIndent()
 
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(endpoint))
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(payload))
-            .build()
+        val fullSystemMessage = "${settings.systemPrompt}\n\n$weightingContext"
 
-        val response = client.send(request, BodyHandlers.ofInputStream())
-        if (response.statusCode() != 200) {
-            emit("❌ Server Error: HTTP ${response.statusCode()}")
-            return@flow
+        val payload = """
+        {
+            "model": "${settings.modelName}",
+            "messages": [
+                { "role": "system", "content": ${escapeJson(fullSystemMessage)} },
+                { "role": "user", "content": ${escapeJson("SOURCE: $context\n\nCODE:\n$content")} }
+            ],
+            "stream": true
         }
+        """.trimIndent()
 
-        val reader = BufferedReader(InputStreamReader(response.body()))
-        reader.use {
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                val trimmedLine = line?.trim() ?: ""
-                if (trimmedLine.startsWith("data:")) {
-                    // Skip 'data: ' prefix
-                }
-                
-                if (trimmedLine.isNotEmpty()) {
+        client.preparePost(url) {
+            setBody(payload)
+            header("Content-Type", "application/json")
+        }.execute { response ->
+            val channel = response.bodyAsChannel()
+            while (!channel.isClosedForRead) {
+                val line = channel.readUTF8Line() ?: break
+                if (line.startsWith("{")) {
                     try {
-                        // Ollama chat API response line format:
-                        // {"model":"...","message":{"role":"assistant","content":"..."},"done":false}
-                        
-                        // Extract content value using simple regex to avoid full JSON parser overhead
                         val contentRegex = "\"content\":\"(.*?)\"".toRegex()
-                        val match = contentRegex.find(trimmedLine)
+                        val match = contentRegex.find(line)
                         if (match != null) {
                             val chunk = unescapeUnicode(match.groupValues[1])
                                 .replace("\\n", "\n")
@@ -82,7 +68,7 @@ class RestAdapter(private val settings: AppSettingsState, private val customBase
                             emit(chunk)
                         }
                     } catch (e: Exception) {
-                        emit("\n[Parser Error: ${e.message} on line: $trimmedLine]\n")
+                        emit("\n[Parser Error: ${e.message}]\n")
                     }
                 }
             }
@@ -98,63 +84,22 @@ class RestAdapter(private val settings: AppSettingsState, private val customBase
 
     override suspend fun ping(): Boolean {
         return try {
-            val payload = """
-                {
-                    "model": "${settings.modelName}",
-                    "messages": [
-                        { "role": "user", "content": "ping" }
-                    ],
-                    "stream": false
-                }
-            """.trimIndent()
-            
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create("$baseUrl/api/chat"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload))
-                .build()
-            client.send(request, BodyHandlers.discarding()).statusCode() == 200
+            val client = HttpClient(CIO)
+            val response = client.get("${settings.restBaseUrl}/api/tags")
+            response.status.value == 200
         } catch (e: Exception) {
-            System.err.println("OPENCODE DEBUG: Ping failed: ${e.message}")
             false
         }
     }
 
-    suspend fun fetchModels(): List<String> = withContext(Dispatchers.IO) {
-        try {
-            val endpoint = "$baseUrl/api/tags"
-            System.err.println("OPENCODE DEBUG: Fetching models from $endpoint")
-            
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create(endpoint))
-                .timeout(Duration.ofSeconds(5))
-                .GET()
-                .build()
-            
-            val response = client.send(request, BodyHandlers.ofString())
-            if (response.statusCode() == 200) {
-                val body = response.body()
-                
-                // Matches "name":"modelname"
-                val foundModels = "\"name\":\"(.*?)\"".toRegex().findAll(body)
-                    .map { it.groupValues[1] }
-                    .filter { it.isNotEmpty() }
-                    .distinct()
-                    .toList()
-                
-                System.err.println("OPENCODE DEBUG: Successfully found ${foundModels.size} models")
-                foundModels
-            } else {
-                emptyList()
-            }
-        } catch (e: Exception) {
-            System.err.println("OPENCODE DEBUG: Fetch models Exception: ${e.message}")
-            emptyList()
-        }
+    private fun escapeJson(input: String): String {
+        val escaped = input.replace("\\", "\\\\")
+            .replace("\"", "\\\"")
+            .replace("\b", "\\b")
+            .replace("\u000C", "\\f")
+            .replace("\n", "\\n")
+            .replace("\r", "\\r")
+            .replace("\t", "\\t")
+        return "\"$escaped\""
     }
-
-    private fun escape(raw: String): String = raw
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
-        .replace("\n", "\\n")
 }
