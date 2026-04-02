@@ -2,7 +2,7 @@
 
 **OpenCode PR Review** is a high-performance Android Studio plugin that transforms your IDE into a **Rigorous Technical Lead**. It uses local AI models to perform deep architectural, performance, and security audits—complete with **Dynamic Weighting**, **Mentorship Guidance**, and **Professional PDF-Ready Reports**.
 
-![OpenCode PR Review Context Menu](demo/context_menu.png)
+![OpenCode PR Review Context Menu](./demo/context_menu.png)
 
 ---
 
@@ -14,7 +14,7 @@
 - **📊 Enterprise Audit Dashboard**: Export beautiful, print-ready HTML reports with executive summaries and professional line-numbered code cards.
 - **🧪 AI Playground**: Test your prompt scripts and weighting logic in a real-time sandbox before deploying them to your team.
 
-![Expert Audit Report Sample](demo/audit_report.png)
+![Expert Audit Report Sample](./demo/audit_report.png)
 
 ---
 
@@ -59,7 +59,7 @@ OpenCode PR Review works best with a local, private LLM for absolute code securi
 4. Choose your **Active AI Model**: `qwen2.5-coder:latest`.
 5. Dial in your **Audit Weighting & Thresholds** to match your team’s standards.
 
-![OpenCode Settings Dashboard](demo/settings.png)
+![OpenCode Settings Dashboard](./demo/settings.png)
 
 ---
 
