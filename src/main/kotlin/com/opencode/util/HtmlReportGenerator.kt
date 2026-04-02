@@ -6,8 +6,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * Robust Enterprise Audit Dashboard Engine.
- * Features pattern-based card injection and SaaS-grade structural layout.
+ * High-Fidelity Enterprise Audit Dashboard Engine.
+ * Features a Section-Aware Architecture for synchronized layout and zero-leak finding cards.
  */
 object HtmlReportGenerator {
 
@@ -31,30 +31,55 @@ object HtmlReportGenerator {
 
     private fun buildHtml(md: String, analyzedFile: String, time: String, critical: Int, major: Int, total: Int, score: Int): String {
         // 1. Structural Pre-processing
-        var body = reconstructBrokenTables(md)
-        
-        // 2. Pattern-Based Card Injection (Robust)
-        val sectionPatterns = mapOf(
-            "(?i)###.*?(Critical|Must Fix|🔴).*?" to "critical",
-            "(?i)###.*?(Major|Should Fix|🟠).*?" to "major",
-            "(?i)###.*?(Minor|Style|🔵).*?" to "minor",
-            "(?i)###.*?(Good|Commendable|✅).*?" to "good",
-            "(?i)###.*?(Growth|Mentorship|GUIDANCE).*?" to "mentor"
-        )
-        
-        sectionPatterns.forEach { (pattern, cssClass) ->
-            body = body.replace(pattern.toRegex(), "\n\n<div class='finding-card $cssClass'>\n$0\n")
-        }
+        val processedMd = reconstructBrokenTables(md)
+        val lines = processedMd.lines()
+        val bodyBuilder = StringBuilder()
+        var currentCardClass: String? = null
 
-        // Close cards at horizontal rules or next sections
-        body = body.replace("---", "</div><hr class='audit-hr'>")
-        if (body.contains("finding-card") && !body.endsWith("</div>")) body += "</div>"
+        // 2. Section-Aware Line Processing
+        lines.forEach { line ->
+            val trimmed = line.trim()
+            
+            // Detect Section Headers (H2 or H3)
+            if (trimmed.startsWith("##")) {
+                if (currentCardClass != null) { bodyBuilder.append("</div>\n"); currentCardClass = null }
+                
+                val patternMap = mapOf(
+                    "(Critical|Must Fix|🔴)" to "critical",
+                    "(Major|Should Fix|🟠)" to "major",
+                    "(Minor|Style|🔵)" to "minor",
+                    "(Good|Commendable|✅)" to "good",
+                    "(Growth|Mentorship|GUIDANCE)" to "mentor"
+                )
+                
+                var matchedClass: String? = null
+                for ((pattern, css) in patternMap) {
+                    if (trimmed.contains(pattern.toRegex(RegexOption.IGNORE_CASE))) { matchedClass = css; break }
+                }
+                
+                if (matchedClass != null) {
+                    currentCardClass = matchedClass
+                    bodyBuilder.append("<div class='finding-card $matchedClass'>\n")
+                }
+                
+                val tag = if (trimmed.startsWith("###")) "h3" else "h2"
+                val levelClass = if (tag == "h3") "audit-h3" else "audit-h2"
+                bodyBuilder.append("<$tag class='$levelClass'>${trimmed.replace("#", "").trim()}</$tag>\n")
+                
+            } else if (trimmed == "---") {
+                if (currentCardClass != null) { bodyBuilder.append("</div>\n"); currentCardClass = null }
+                bodyBuilder.append("<hr class='audit-hr'>\n")
+            } else {
+                bodyBuilder.append(line).append("\n")
+            }
+        }
+        if (currentCardClass != null) { bodyBuilder.append("</div>\n") }
+
+        var body = bodyBuilder.toString()
 
         // 3. Clinical Element Mapping
         body = body
             .replace("# ", "<h1 class='audit-h1'>")
-            .replace("## ", "<h2 class='audit-h2'>")
-            .replace("### ", "<h3 class='audit-h3'>")
             .replace("\n", "<br>")
             .replace("**", "<strong>", false)
 
@@ -106,21 +131,21 @@ object HtmlReportGenerator {
         .st-warning { color: var(--clr-orange); background: #fffbeb; }
         .st-rejected { color: var(--clr-red); background: #fef2f2; }
 
-        .audit-h1 { font-size: 26px; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin: 40px 0 24px; }
-        .audit-h2 { font-size: 20px; font-weight: 700; margin: 32px 0 16px; }
-        .audit-h3 { font-size: 15px; font-weight: 700; margin-top: 0; color: inherit; }
+        .audit-h1 { font-size: 26px; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 32px; }
+        .audit-h2 { font-size: 18px; font-weight: 700; margin: 0 0 16px; color: inherit; }
+        .audit-h3 { font-size: 15px; font-weight: 700; margin: 0 0 12px; color: inherit; }
 
         .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
         .metric-unit { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
         .metric-unit .val { font-size: 24px; font-weight: 700; display: block; }
-        .metric-unit .lab { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+        .metric-unit .lab { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
 
-        .finding-card { background: var(--white); border: 1px solid var(--border); border-left: 5px solid; border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+        .finding-card { background: var(--white); border: 1px solid var(--border); border-left: 5px solid; border-radius: 8px; padding: 32px; margin-bottom: 32px; }
         .critical { border-left-color: var(--clr-red); }
         .major { border-left-color: var(--clr-orange); }
         .minor { border-left-color: var(--clr-blue); }
         .good { border-left-color: var(--clr-green); }
-        .mentor { border-left-color: #6366f1; background: #f5f3ff; }
+        .mentor { border-left-color: #6366f1; background: #f5f3ff; border-top: 1px solid #e0e7ff; }
 
         .table-wrapper { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow-x: auto; margin: 24px 0; }
         table { width: 100%; border-collapse: collapse; min-width: 500px; }
@@ -128,10 +153,10 @@ object HtmlReportGenerator {
         td { padding: 12px 16px; border-bottom: 1px solid #f9fafb; font-size: 14px; color: var(--text-sec); }
         
         .code-wrap { background: #0f172a; border-radius: 8px; margin: 20px 0; overflow: hidden; border: 1px solid #1e293b; color: #cbd5e1; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
-        .ln { width: 40px; padding: 12px 0; text-align: center; color: #475569; background: #020617; border-right: 1px solid #1e293b; user-select: none; }
-        .src { padding: 12px 20px; white-space: pre; }
+        .ln { width: 40px; padding: 16px 0; text-align: center; color: #475569; background: #020617; border-right: 1px solid #1e293b; }
+        .src { padding: 16px 20px; white-space: pre; }
         
-        .audit-hr { border: 0; height: 1px; background: var(--border); margin: 40px 0; }
+        .audit-hr { border: 0; height: 1px; background: var(--border); margin: 64px 0; }
         .footer { text-align: center; margin-top: 80px; font-size: 12px; color: var(--text-muted); }
     </style>
 </head>
@@ -152,7 +177,7 @@ object HtmlReportGenerator {
         <section class="metrics-grid">
             <div class="metric-unit">
                 <span class="val" style="color:var(--clr-red);">$critical</span>
-                <span class="lab">Critical Findings</span>
+                <span class="lab">Critical Issues</span>
             </div>
             <div class="metric-unit">
                 <span class="val" style="color:var(--clr-orange);">$major</span>
@@ -160,14 +185,14 @@ object HtmlReportGenerator {
             </div>
             <div class="metric-unit">
                 <span class="val" style="color:var(--clr-green);">${(score * 0.9 + 5).toInt()}%</span>
-                <span class="lab">Review Integrity</span>
+                <span class="lab">Audit Integrity</span>
             </div>
         </section>
 
         <main>$body</main>
 
         <footer class="footer">
-            Generated by OpenCode PR Review Engine &bull; Expert Architecture Auditor &bull; 🔐 Private Offline Logic
+            OpenCode PR Review &bull; Professional Architecture Auditor &bull; 🔐 Private Logic
         </footer>
     </div>
 </body>
@@ -201,7 +226,7 @@ object HtmlReportGenerator {
         val numStr = lines.indices.joinToString("\n") { (it + 1).toString() }
         return """
             <div class='code-wrap'>
-                <div style='background:#1e293b; padding:6px 16px; font-size:10px; font-weight:700; color:#94a3b8;'>$lang SOURCE ANALYSIS</div>
+                <div style='background:#1e293b; padding:6px 16px; font-size:10px; font-weight:700; color:#94a3b8;'>$lang SOURCE CODE ANALYSIS</div>
                 <table style='width:100%'><tr>
                     <td class='ln'>$numStr</td>
                     <td class='src'>$code</td>
