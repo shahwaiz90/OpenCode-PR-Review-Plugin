@@ -3,9 +3,8 @@
 **OpenCode PR Review** is a high-performance Android Studio plugin that transforms your IDE into a **Rigorous Technical Lead**. It uses local AI models to perform deep architectural, performance, and security audits—complete with **Dynamic Weighting**, **Mentorship Guidance**, and **Professional PDF-Ready Reports**.
 
 <p align="center">
-  <img src="demo/context_menu.png" width="100%" alt="OpenCode PR Review Context Menu">
+  <img src="https://raw.githubusercontent.com/shahwaiz90/OpenCode-PR-Review-Plugin/main/demo/context_menu.png" width="100%" alt="OpenCode PR Review Context Menu">
 </p>
-
 ---
 
 ## 🚀 Key Features
@@ -16,18 +15,12 @@
 - **📊 Enterprise Audit Dashboard**: Export beautiful, print-ready HTML reports with executive summaries and professional line-numbered code cards.
 - **🧪 AI Playground**: Test your prompt scripts and weighting logic in a real-time sandbox before deploying them to your team.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/shahwaiz90/OpenCode-PR-Review-Plugin/main/demo/context_menu.png" width="100%" alt="OpenCode PR Review Context Menu">
-</p>
+
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/shahwaiz90/OpenCode-PR-Review-Plugin/main/demo/audit_report.png" width="100%" alt="Expert Audit Report Sample">
 </p>
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/shahwaiz90/OpenCode-PR-Review-Plugin/main/demo/settings.png" width="100%" alt="OpenCode Settings Dashboard">
-</p>
-
+ 
 ---
 
 ## 🏎️ Running as an Open Source Developer
