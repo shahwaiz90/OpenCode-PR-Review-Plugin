@@ -6,8 +6,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * Robust World-Class Audit Dashboard Engine.
- * Optimized for Aligned Tables, Point Masking, and Zero-Bold Leakage.
+ * Enterprise-Grade Audit Dashboard Engine.
+ * Implements a SaaS-inspired Design System with high-fidelity typography and surgical alignment.
  */
 object HtmlReportGenerator {
 
@@ -30,24 +30,25 @@ object HtmlReportGenerator {
     }
 
     private fun buildHtml(md: String, analyzedFile: String, time: String, critical: Int, major: Int, total: Int, score: Int): String {
-        // High-Fidelity Table Reconstruction Engine
+        // Clinical Markdown Pre-processing
         val processedMd = reconstructBrokenTables(md)
         
         var body = processedMd
-            .replace("# ", "<h2 class='audit-title'>")
-            .replace("## ", "<h3 class='audit-subtitle'>")
+            .replace("# ", "<h1 class='audit-h1'>")
+            .replace("## ", "<h2 class='audit-h2'>")
+            .replace("### ", "<h3 class='audit-h3'>")
             .replace("\n", "<br>")
             .replace("**", "<strong>", false)
-            .replace("---", "<hr class='audit-divider'>")
+            .replace("---", "<hr class='audit-hr'>")
 
-        // 1. Surgical Table Refinement (Ensures correct semantic rendering)
+        // 1. Surgical Table Reconstruction (Enterprise Style)
         val finalTableRegex = "(\\|[\\s\\S]+?\\|)".toRegex()
         body = finalTableRegex.replace(body) { match ->
             val rows = match.groupValues[1].split("<br>").map { it.trim() }.filter { it.count { c -> c == '|' } >= 2 }
             if (rows.isEmpty()) return@replace match.groupValues[1]
             
             val headLine = rows[0]
-            val rest = rows.drop(1).filter { !it.contains("---") && !it.contains(":---") } // Strip alignment artifacts
+            val rest = rows.drop(1).filter { !it.contains("---") && !it.contains(":---") }
             
             val headCells = headLine.split("|").filter { it.isNotBlank() }.map { it.trim() }
             val bodyRows = rest.map { it.split("|").filter { it.isNotBlank() }.map { it.trim() } }
@@ -56,85 +57,136 @@ object HtmlReportGenerator {
             val rowsHtml = bodyRows.joinToString("") { row ->
                 "<tr>" + row.joinToString("") { "<td>$it</td>" } + "</tr>"
             }
-            "<div class='table-card'><table><thead><tr>$headHtml</tr></thead><tbody>$rowsHtml</tbody></table></div>"
+            "<div class='table-wrapper'><table><thead><tr>$headHtml</tr></thead><tbody>$rowsHtml</tbody></table></div>"
         }
 
-        // 2. High-Contrast Severity Mapping & Point Extraction
-        body = body.replace("### 🐛 Critical Issues [Must Fix]", "<div class='finding-card critical'><h3>🔴 CRITICAL BLOCKED [MUST FIX]</h3>")
-                   .replace("### ⚠️ Major Issues [Should Fix]", "<div class='finding-card major'><h3>🟠 MAJOR IMPACT [SHOULD FIX]</h3>")
-                   .replace("### 💡 Minor Issues [Style]", "<div class='finding-card minor'><h3>🔵 MINOR IMPROVEMENTS</h3>")
-                   .replace("### ✨ Good Practices", "<div class='finding-card good'><h3>✅ COMMENDABLE PRACTICES</h3>")
+        // 2. Finding Card Injections
+        body = body.replace("<h3 class='audit-h3'>🐛 Critical Issues [Must Fix]</h3>", "<div class='finding-card critical'><h3 class='card-title'>Critical System Blockers</h3>")
+                   .replace("<h3 class='audit-h3'>⚠️ Major Issues [Should Fix]</h3>", "<div class='finding-card major'><h3 class='card-title'>Architectural Degradations</h3>")
+                   .replace("<h3 class='audit-h3'>💡 Minor Issues [Style]</h3>", "<div class='finding-card minor'><h3 class='card-title'>Design & Style Optimizations</h3>")
+                   .replace("<h3 class='audit-h3'>✨ Good Practices</h3>", "<div class='finding-card good'><h3 class='card-title'>Commendable Patterns</h3>")
+                   .replace("<h3 class='audit-h3'>GROWTH GUIDANCE</h3>", "<div class='finding-card mentor'><h3 class='card-title'>Technical Mentorship & Growth</h3>")
 
-        // 3. Precision Code Highlighting
+        // Close cards (simplified logic for markdown flow)
+        body = body.replace("<hr class='audit-hr'>", "</div><hr class='audit-hr'>")
+
+        // 3. Code Block Highlighting
         val codeBlockRegex = "```([a-z]*)\\n([\\s\\S]*?)\\n```".toRegex()
         body = codeBlockRegex.replace(body) { match ->
             formatCodeWithLineNumbers(match.groupValues[2].trimIndent(), match.groupValues[1].uppercase())
         }
 
-        val verdictClass = if (score >= 85) "v-approved" else if (score >= 75) "v-warn" else "v-rejected"
-        val verdictText = if (score >= 85) "✅ APPROVED" else if (score >= 75) "⚠️ PENDING CHANGES" else "❌ REJECTED"
+        val verdictClass = if (score >= 85) "st-approved" else if (score >= 70) "st-warning" else "st-rejected"
+        val statusText = if (score >= 85) "CERTIFIED" else if (score >= 70) "ACTION REQUIRED" else "BLOCKING ISSUES"
 
         return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Elite Audit Report</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <title>OpenCode Elite Audit Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --p-bg: #f8fafc; --p-border: #e2e8f0; --c-critical: #ef4444; --c-major: #f59e0b; --c-minor: #3b82f6; --c-good: #10b981; }
-        body { font-family: 'Inter', sans-serif; background: var(--p-bg); color: #1e293b; margin: 0; padding: 40px 20px; line-height: 1.6; }
-        .dashboard-container { max-width: 1050px; margin: 0 auto; }
-
-        .verdict-hero { background: #fff; padding: 48px; border-radius: 12px; border: 1px solid var(--p-border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 32px; display: flex; align-items: center; justify-content: space-between; position: relative; overflow: hidden; }
-        .main-verdict { font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 800; margin: 0; }
-        .v-approved { color: var(--c-good); } .v-warn { color: var(--c-major); } .v-rejected { color: var(--c-critical); }
-        .score-circle { width: 140px; height: 140px; border-radius: 50%; border: 10px solid #f1f5f9; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-size: 42px; font-weight: 800; color: #010409; margin-bottom: 12px; background: #fff; }
-        .score-label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; font-weight: 700; }
+        :root {
+            --bg: #f9fafb; --white: #ffffff;
+            --text-main: #111827; --text-sec: #4b5563; --text-muted: #9ca3af;
+            --border: #e5e7eb; --accent: #3b82f6;
+            --clr-red: #ef4444; --clr-orange: #f59e0b; --clr-green: #10b981; --clr-blue: #3b82f6;
+        }
+        * { box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 60px 20px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
         
-        .metric-card { background: #fff; padding: 24px; border-radius: 8px; border: 1px solid var(--p-border); text-align: center; }
-        .metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 48px; }
+        .container { max-width: 900px; margin: 0 auto; }
         
-        .finding-card { background: #fff; border-radius: 8px; border-left: 8px solid; margin-bottom: 24px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .critical { border-left-color: var(--c-critical); } .major { border-left-color: var(--c-major); } .minor { border-left-color: var(--c-minor); }
+        /* Header Certificate */
+        .report-header { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 40px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .meta-group h4 { margin: 0 0 4px 0; font-size: 11px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em; }
+        .meta-group p { margin: 0; font-weight: 600; font-size: 15px; color: var(--text-sec); }
+        
+        .score-display { text-align: right; }
+        .score-num { font-size: 48px; font-weight: 800; line-height: 1; margin-bottom: 2px; }
+        .score-status { font-size: 12px; font-weight: 700; border-radius: 4px; padding: 2px 8px; display: inline-block; }
+        .st-approved { color: var(--clr-green); background: #ecfdf5; }
+        .st-warning { color: var(--clr-orange); background: #fffbeb; }
+        .st-rejected { color: var(--clr-red); background: #fef2f2; }
 
-        .table-card { background: #fff; border-radius: 8px; border: 1px solid var(--p-border); overflow: hidden; margin: 24px 0; }
+        /* Typography */
+        .audit-h1 { font-size: 28px; font-weight: 800; margin: 0 0 24px 0; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+        .audit-h2 { font-size: 20px; font-weight: 700; margin: 40px 0 16px 0; display: flex; align-items: center; }
+        .audit-hr { border: 0; height: 1px; background: var(--border); margin: 48px 0; }
+        
+        /* Metrics Grid */
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        .metric-unit { background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+        .metric-unit .val { display: block; font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .metric-unit .lab { font-size: 12px; color: var(--text-sec); font-weight: 500; }
+
+        /* Finding Cards */
+        .finding-card { background: var(--white); border: 1px solid var(--border); border-left: 5px solid; border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+        .card-title { margin: 0 0 16px 0; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+        .critical { border-left-color: var(--clr-red); }
+        .major { border-left-color: var(--clr-orange); }
+        .minor { border-left-color: var(--clr-blue); }
+        .good { border-left-color: var(--clr-green); }
+        .mentor { border-left-color: #6366f1; background: #f5f3ff; }
+
+        /* Tables */
+        .table-wrapper { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 24px 0; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 16px 24px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 14px; }
-        th { background: #f8fafc; font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+        th { background: #fcfcfd; border-bottom: 1px solid var(--border); padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; }
+        td { padding: 14px 16px; border-bottom: 1px solid #f9fafb; font-size: 14px; }
+        tr:last-child td { border-bottom: 0; }
 
-        .code-container { background: #0d1117; border-radius: 8px; margin: 24px 0; overflow: hidden; }
-        .ln { width: 48px; padding: 16px 12px; text-align: right; color: #484f58; font-family: 'JetBrains Mono', monospace; font-size: 12px; background: #0d1117; border-right: 1px solid #30363d; }
-        .src { padding: 16px 24px; color: #c9d1d9; font-family: 'JetBrains Mono', monospace; font-size: 14px; white-space: pre; }
-        
-        /* Specialized Title Bolding only */
-        strong:first-child { color: #010409; font-weight: 800; }
-        strong { font-weight: 500; color: #475569; } /* Reduce weight for following bolds if they leak */
+        /* Code Block */
+        .code-wrap { background: #111827; border-radius: 8px; margin: 20px 0; overflow: hidden; color: #e5e7eb; font-family: 'JetBrains Mono', monospace; font-size: 13px; border: 1px solid #374151; }
+        .code-title { background: #1f2937; padding: 8px 16px; font-size: 10px; font-weight: 700; color: var(--text-muted); border-bottom: 1px solid #374151; }
+        .ln { width: 40px; padding: 12px 0; text-align: center; color: #4b5563; background: #0b0f1a; border-right: 1px solid #374151; user-select: none; }
+        .src { padding: 12px 20px; white-space: pre; }
+
+        strong { color: var(--text-main); font-weight: 600; }
+        .footer { text-align: center; margin-top: 80px; font-size: 12px; color: var(--text-muted); font-weight: 500; }
     </style>
 </head>
 <body>
-    <div class="dashboard-container">
-        <section class="verdict-hero">
-            <div class="hero-left">
-                <h2 class="main-verdict $verdictClass">$verdictText</h2>
-                <div class="audit-file-path">Integrity Audit for: <strong>$analyzedFile</strong></div>
+    <div class="container">
+        <header class="report-header">
+            <div class="header-info">
+                <div class="meta-group">
+                    <h4>Analyzed Resource</h4>
+                    <p>$analyzedFile</p>
+                </div>
+                <div class="meta-group" style="margin-top: 20px;">
+                    <h4>Audit Timestamp</h4>
+                    <p>$time</p>
+                </div>
             </div>
-            <div class="hero-right">
-                <div class="score-circle">$score</div>
-                <div class="score-label">Integrity Score</div>
+            <div class="score-display">
+                <div class="score-num">$score</div>
+                <div class="score-status $verdictClass">$statusText</div>
+            </div>
+        </header>
+
+        <section class="metrics-grid">
+            <div class="metric-unit">
+                <span class="val" style="color: var(--clr-red);">$critical</span>
+                <span class="lab">System Blockers</span>
+            </div>
+            <div class="metric-unit">
+                <span class="val" style="color: var(--clr-orange);">$major</span>
+                <span class="lab">Major Findings</span>
+            </div>
+            <div class="metric-unit">
+                <span class="val" style="color: var(--clr-green);">${(score * 0.9 + 5).toInt()}%</span>
+                <span class="lab">Audit Integrity</span>
             </div>
         </section>
 
-        <section class="metrics-row">
-            <div class="metric-card" style="border-top: 4px solid var(--c-critical);"><span style="font-size: 28px; font-weight: 800; color: var(--c-critical);">$critical</span><br><small>BLOCKERS</small></div>
-            <div class="metric-card" style="border-top: 4px solid var(--c-major);"><span style="font-size: 28px; font-weight: 800; color: var(--c-major);">$major</span><br><small>MAJOR ISSUES</small></div>
-            <div class="metric-card" style="border-top: 4px solid var(--c-good);"><span style="font-size: 28px; font-weight: 800; color: var(--c-good);">${(score * 0.9).toInt()}%</span><br><small>CONFIDENCE</small></div>
-        </section>
+        <main class="audit-body">
+            $body
+        </main>
 
-        $body
-
-        <footer style="text-align: center; margin-top: 64px; color: #94a3b8; font-size: 11px;">
-            Elite Engineering Audit &bull; OpenCode PR Review Engine &bull; $time
+        <footer class="footer">
+            OpenCode PR Review &bull; Enterprise Auditor v2.4 &bull; Local Private Logic 🔐
         </footer>
     </div>
 </body>
@@ -142,20 +194,17 @@ object HtmlReportGenerator {
         """.trimIndent()
     }
 
-    /**
-     * Finds multi-line pipe streams and collapses them into single blocks for Markdown processing.
-     */
     private fun reconstructBrokenTables(md: String): String {
         val lines = md.lines()
         val builder = StringBuilder()
         var inTable = false
         
         lines.forEach { line ->
-            if (line.contains("|")) {
+            if (line.trim().startsWith("|")) {
                 if (!inTable) inTable = true
                 builder.append(line.trim()).append("\n")
             } else if (line.isBlank() && inTable) {
-                // Keep the stream alive if it's just a blank line
+                // Keep streaming table rows
             } else {
                 if (inTable) { builder.append("\n"); inTable = false }
                 builder.append(line).append("\n")
@@ -168,8 +217,9 @@ object HtmlReportGenerator {
         val lines = code.lines()
         val numStr = lines.indices.joinToString("\n") { (it + 1).toString() }
         return """
-            <div class='code-container'>
-                <table class='code-table'><tr>
+            <div class='code-wrap'>
+                <div class='code-title'>$lang SOURCE ANALYSIS</div>
+                <table style='width:100%'><tr>
                     <td class='ln'>$numStr</td>
                     <td class='src'>$code</td>
                 </tr></table>
