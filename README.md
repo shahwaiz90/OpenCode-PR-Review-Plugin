@@ -17,7 +17,15 @@
 - **🧪 AI Playground**: Test your prompt scripts and weighting logic in a real-time sandbox before deploying them to your team.
 
 <p align="center">
-  <img src="demo/audit_report.png" width="100%" alt="Expert Audit Report Sample">
+  <img src="https://raw.githubusercontent.com/shahwaiz90/OpenCode-PR-Review-Plugin/main/demo/context_menu.png" width="100%" alt="OpenCode PR Review Context Menu">
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/shahwaiz90/OpenCode-PR-Review-Plugin/main/demo/audit_report.png" width="100%" alt="Expert Audit Report Sample">
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/shahwaiz90/OpenCode-PR-Review-Plugin/main/demo/settings.png" width="100%" alt="OpenCode Settings Dashboard">
 </p>
 
 ---
