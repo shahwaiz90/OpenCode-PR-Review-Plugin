@@ -6,8 +6,8 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * Enterprise Audit Dashboard Engine.
- * Optimized for Aligned Single-Row Tables, Point Masking, and Section-Aware Scoping.
+ * World-Class Audit Dashboard Engine.
+ * Features 4-Column Architectural Tables, High-Fidelity Progress HUDs, and Minimalist Professional CSS.
  */
 object HtmlReportGenerator {
 
@@ -30,13 +30,12 @@ object HtmlReportGenerator {
     }
 
     private fun buildHtml(md: String, analyzedFile: String, time: String, critical: Int, major: Int, total: Int, score: Int): String {
-        // 1. Structural Pre-processing
+        // 1. Line-Aware Section Injections
         val processedMd = reconstructBrokenTables(md)
         val lines = processedMd.lines()
         val bodyBuilder = StringBuilder()
         var currentCardClass: String? = null
 
-        // 2. Section-Aware Architecture
         lines.forEach { line ->
             val trimmed = line.trim()
             if (trimmed.startsWith("##")) {
@@ -54,7 +53,7 @@ object HtmlReportGenerator {
                 }
                 if (matchedClass != null) {
                     currentCardClass = matchedClass
-                    bodyBuilder.append("<div class='finding-card $matchedClass'>\n")
+                    bodyBuilder.append("<div class='section-card $matchedClass'>\n")
                 }
                 val tag = if (trimmed.startsWith("###")) "h3" else "h2"
                 bodyBuilder.append("<$tag class='audit-$tag'>${trimmed.replace("#", "").trim()}</$tag>\n")
@@ -70,7 +69,7 @@ object HtmlReportGenerator {
         var body = bodyBuilder.toString()
         body = body.replace("# ", "<h1 class='audit-h1'>").replace("\n", "<br>").replace("**", "<strong>", false)
 
-        // 3. Surgical Single-Row Table Reconstruction
+        // 2. 4-Column Architectural Table Engine
         val tableRegex = "(\\|[\\s\\S]+?\\|)".toRegex()
         body = tableRegex.replace(body) { match ->
             val content = match.groupValues[1].replace("<br>", "\n")
@@ -83,86 +82,115 @@ object HtmlReportGenerator {
             val headHtml = headLine.split("|").filter { it.isNotBlank() }.joinToString("") { "<th>${it.trim()}</th>" }
             val rowsHtml = dataRows.joinToString("") { row ->
                 val cells = row.split("|").filter { it.isNotBlank() }.map { it.trim() }
+                
+                // Partition Score & Max for Proportional Progress
+                val valStr = cells.getOrNull(1) ?: "0"
+                val maxStr = cells.getOrNull(2) ?: "100"
+                val valNum = valStr.toDoubleOrNull() ?: 0.0
+                val maxNum = maxStr.toDoubleOrNull() ?: 1.0
+                val pct = (valNum / maxNum * 100).coerceIn(0.0, 100.0).toInt()
+                
                 val stsClass = when {
-                    cells.any { it.contains("✅") } -> "st-pos"
-                    cells.any { it.contains("❌") } -> "st-neg"
+                    cells.any { it.contains("Approved", true) || it.contains("✅") } -> "badge-pos"
+                    cells.any { it.contains("Rejected", true) || it.contains("❌") } -> "badge-neg"
                     else -> ""
                 }
-                "<tr>" + cells.joinToString("") { "<td><span class='$stsClass'>$it</span></td>" } + "</tr>"
+                
+                """
+                <tr>
+                    <td class='td-cat'>${cells.getOrNull(0) ?: ""}</td>
+                    <td class='td-val'>
+                        <div class='p-container'><div class='p-fill' style='width: $pct%'></div><span class='p-num'>$valStr</span></div>
+                    </td>
+                    <td class='td-max'>$maxStr</td>
+                    <td class='td-sts'><span class='badge $stsClass'>${cells.getOrNull(3) ?: ""}</span></td>
+                </tr>
+                """.trimIndent()
             }
-            "<div class='table-wrapper'><table><thead><tr>$headHtml</tr></thead><tbody>$rowsHtml</tbody></table></div>"
+            "<div class='elite-table'><table><thead><tr>$headHtml</tr></thead><tbody>$rowsHtml</tbody></table></div>"
         }
 
-        // 4. Code Highlighting
+        // 3. Code & Verdict Styles
         val codeBlockRegex = "```([a-z]*)\\n([\\s\\S]*?)\\n```".toRegex()
         body = codeBlockRegex.replace(body) { match ->
             formatCodeWithLineNumbers(match.groupValues[2].trimIndent(), match.groupValues[1].uppercase())
         }
 
-        val verdictClass = if (score >= 85) "st-approved" else if (score >= 70) "st-warning" else "st-rejected"
-        val statusText = if (score >= 85) "CERTIFIED" else if (score >= 70) "ACTION REQUIRED" else "BLOCKING ISSUES"
+        val verdictClass = if (score >= 85) "st-pos" else if (score >= 70) "st-warn" else "st-neg"
+        val statusText = if (score >= 85) "CERTIFIED AUDIT" else if (score >= 70) "REQUIREMENTS PENDING" else "INTEGRITY REJECTION"
 
         return """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Elite Audit Report</title>
+    <title>Elite Engineering Audit</title>
     <style>
         :root {
-            --bg: #f9fafb; --white: #ffffff;
-            --text-main: #111827; --text-sec: #374151; --text-muted: #9ca3af;
-            --border: #e5e7eb; --clr-red: #ef4444; --clr-orange: #f59e0b; --clr-green: #10b981; --clr-blue: #3b82f6;
+            --bg: #0d1117; --card: #161b22; --border: #30363d;
+            --main: #f0f6fc; --sec: #8b949e; --muted: #484f58;
+            --pos: #3fb950; --neg: #f85149; --warn: #d29922; --accent: #58a6ff;
         }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 60px 20px; line-height: 1.6; }
-        .container { max-width: 900px; margin: 0 auto; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; background: var(--bg); color: var(--main); margin: 0; padding: 60px 20px; line-height: 1.5; }
+        .container { max-width: 920px; margin: 0 auto; }
         
-        .report-header { background: var(--white); border: 1px solid var(--border); border-radius: 12px; padding: 40px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; }
-        .score-num { font-size: 48px; font-weight: 800; line-height: 1; }
-        .score-status { font-size: 12px; font-weight: 700; border-radius: 4px; padding: 4px 12px; margin-top: 8px; display: inline-block; }
-        .st-approved { color: var(--clr-green); background: #ecfdf5; }
-        .st-warning { color: var(--clr-orange); background: #fffbeb; }
-        .st-rejected { color: var(--clr-red); background: #fef2f2; }
+        /* High-Fidelity Header HUD */
+        .hud-header { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 40px; margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; }
+        .hud-score-display { text-align: center; border-left: 1px solid var(--border); padding-left: 48px; }
+        .hud-score-val { font-size: 56px; font-weight: 800; line-height: 1; }
+        .hud-file-path { color: var(--sec); font-family: monospace; font-size: 14px; margin: 8px 0 0; }
 
-        .audit-h1 { font-size: 26px; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 32px; }
-        .audit-h2 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
-        .audit-h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+        /* Architectural Sectioning */
+        .audit-h1 { font-size: 28px; font-weight: 800; border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 48px; }
+        .audit-h2 { font-size: 16px; font-weight: 700; text-transform: uppercase; color: var(--sec); letter-spacing: 0.12em; margin-bottom: 24px; }
+        .audit-h3 { font-size: 15px; font-weight: 700; margin: 0 0 12px; }
 
-        .finding-card { background: var(--white); border: 1px solid var(--border); border-left: 5px solid; border-radius: 8px; padding: 32px; margin-bottom: 32px; }
-        .critical { border-left-color: var(--clr-red); }
-        .major { border-left-color: var(--clr-orange); }
-        .minor { border-left-color: var(--clr-blue); }
-        .mentor { border-left-color: #6366f1; background: #f5f3ff; }
+        .section-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 32px; margin-bottom: 32px; border-left: 6px solid transparent; }
+        .critical { border-left-color: var(--neg); }
+        .major { border-left-color: var(--warn); }
+        .good { border-left-color: var(--pos); }
+        .mentor { border-left-color: var(--accent); background: linear-gradient(90deg, rgba(88, 166, 255, 0.05), transparent); }
 
-        .table-wrapper { background: var(--white); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 24px 0; }
+        /* Elite 4-Column Table */
+        .elite-table { background: var(--card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 32px 0; }
         table { width: 100%; border-collapse: collapse; }
-        th { background: #fcfcfd; border-bottom: 1px solid var(--border); padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; color: var(--text-sec); text-transform: uppercase; }
-        td { padding: 14px 16px; border-bottom: 1px solid #f9fafb; font-size: 14px; color: var(--text-sec); }
-        .st-pos { color: var(--clr-green); font-weight: 600; }
-        .st-neg { color: var(--clr-red); font-weight: 600; }
-
-        .code-wrap { background: #0f172a; border-radius: 8px; margin: 24px 0; overflow: hidden; border: 1px solid #1e293b; color: #cbd5e1; font-family: monospace; font-size: 13px; }
-        .ln { width: 40px; padding: 16px 0; text-align: center; color: #475569; background: #020617; border-right: 1px solid #1e293b; }
-        .src { padding: 16px 20px; white-space: pre; }
+        th { background: rgba(0,0,0,0.2); padding: 16px 24px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--sec); border-bottom: 1px solid var(--border); }
+        td { padding: 16px 24px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--main); }
+        tr:last-child td { border-bottom: none; }
         
-        .footer { text-align: center; margin-top: 80px; font-size: 12px; color: var(--text-muted); }
+        .p-container { display: flex; align-items: center; gap: 12px; min-width: 160px; }
+        .p-fill { flex: 1; height: 6px; background: var(--border); border-radius: 3px; position: relative; overflow: hidden; }
+        .p-fill::after { content: ''; position: absolute; height: 100%; top: 0; left: 0; background: var(--accent); border-radius: 3px; width: inherit; }
+        .p-num { font-size: 12px; font-weight: 700; color: var(--main); min-width: 32px; text-align: right; }
+
+        .badge { font-size: 11px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; border: 1px solid transparent; }
+        .badge-pos { color: var(--pos); border-color: var(--pos); background: rgba(63, 185, 80, 0.1); }
+        .badge-neg { color: var(--neg); border-color: var(--neg); background: rgba(248, 81, 73, 0.1); }
+
+        .code-block { background: #010409; border-radius: 8px; margin: 24px 0; overflow: hidden; border: 1px solid var(--border); }
+        .ln { width: 48px; text-align: right; padding: 16px 12px; font-family: monospace; font-size: 12px; color: var(--muted); background: #0d1117; border-right: 1px solid var(--border); }
+        .src { padding: 16px 24px; font-family: monospace; font-size: 14px; color: #c9d1d9; white-space: pre; }
+        .st-pos { color: var(--pos); } .st-neg { color: var(--neg); } .st-warn { color: var(--warn); }
+        .footer { text-align: center; margin-top: 80px; font-size: 11px; color: var(--muted); }
     </style>
 </head>
 <body>
     <div class="container">
-        <header class="report-header">
+        <header class="hud-header">
             <div>
-                <h4 style="margin:0; font-size:11px; color:var(--text-muted); text-transform:uppercase;">Analyzed Resource</h4>
-                <p style="margin:4px 0 0; font-weight:600; font-size:16px;">$analyzedFile</p>
-                <p style="margin:8px 0 0; font-size:12px; color:var(--text-muted);">$time</p>
+                <h1 style="margin:0; font-size:32px; font-weight:800;">Audit Integrity Certificate</h1>
+                <p class="hud-file-path">$analyzedFile</p>
+                <p style="margin:8px 0 0; font-size:12px; color:var(--sec);">$time</p>
             </div>
-            <div style="text-align:right;">
-                <div class="score-num">$score</div>
-                <div class="score-status $verdictClass">$statusText</div>
+            <div class="hud-score-display">
+                <div class="hud-score-val $verdictClass">$score</div>
+                <div style="font-size:12px; font-weight:700; color:var(--sec);">$statusText</div>
             </div>
         </header>
+
         <main>$body</main>
-        <footer class="footer">OpenCode PR Review &bull; Master Auditor &bull; 🔐 Private Logic</footer>
+        
+        <footer class="footer">OpenCode Enterprise PR Auditor &bull; Finalized Architecture Certificate &bull; 🔐 Private Logic</footer>
     </div>
 </body>
 </html>
@@ -193,8 +221,8 @@ object HtmlReportGenerator {
         val lines = code.lines()
         val numStr = lines.indices.joinToString("\n") { (it + 1).toString() }
         return """
-            <div class='code-wrap'>
-                <div style='background:#1e293b; padding:6px 16px; font-size:10px; font-weight:700; color:#94a3b8;'>$lang SOURCE ANALYSIS</div>
+            <div class='code-block'>
+                <div style='background:#161b22; padding:8px 16px; font-size:10px; font-weight:700; color:var(--sec); border-bottom:1px solid var(--border);'>$lang SOURCE ANALYSIS</div>
                 <table style='width:100%'><tr>
                     <td class='ln'>$numStr</td>
                     <td class='src'>$code</td>

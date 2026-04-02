@@ -43,9 +43,9 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
             - If MAJOR PERFORMANCE or CRITICAL BLOCKERS exist: Status is ❌ REJECTED and Score capped at 50/100.
             
             [STRICT_TABLE_FORMAT]
-            - You MUST output the CATEGORY SCORES BREAKDOWN in a SINGLE table row per category.
-            - Format: | Category | Score | Status |
-            - Example: | CODE QUALITY | 25/25 | ✅ APPROVED |
+            - CATEGORY SCORES BREAKDOWN MUST be a clean 4-column table.
+            - Columns: | Category | Score | Max | Status |
+            - Example: | Code Quality | 25 | 25 | Approved |
             
             [FORMATTING_PROTOCOL]
             1. ONLY bold the issue title or question. Example: **Performance Leak:** explanation...
@@ -57,10 +57,8 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
             **Developer Level:** [Junior / Mid-Level / Senior]
             ---
             ## 🏆 DEVELOPER SCORE
-            Detailed breakdown based on weights.
             ---
             ## 📊 EXECUTIVE SUMMARY
-            Concise architectural summary.
             ---
             ## 🔍 DETAILED AUDIT FINDINGS
             ### 🐛 Critical Issues [Must Fix]
@@ -68,19 +66,16 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
             ### 💡 Minor Issues [Style]
             ---
             ## 📈 CATEGORY SCORES BREAKDOWN
-            | Category | Score | Status |
-            |:---|:---|:---|
-            | Code Quality | X/25 | [Status] |
-            | Best Practices | X/25 | [Status] |
-            | Performance | X/20 | [Status] |
-            | Readability | X/15 | [Status] |
-            | Security | X/15 | [Status] |
+            | Category | Score | Max | Status |
+            |:---|:---|:---|:---|
+            | Code Quality | 25 | 25 | Approved |
+            | Best Practices | 25 | 25 | Approved |
+            | Performance | 10 | 20 | Approved |
+            | Readability | 15 | 15 | Approved |
+            | Security | 15 | 15 | Approved |
             ---
+            ## 👨‍🏫 GROWTH GUIDANCE (Professional Mentorship)
             ## 💬 FINAL VERDICT
-            **PR Status:** ✅ Approved / ❌ Rejected  
-            
-            ### 👨‍🏫 GROWTH GUIDANCE
-            Provide mentorship with documentation links.
         """.trimIndent()
     }
 
