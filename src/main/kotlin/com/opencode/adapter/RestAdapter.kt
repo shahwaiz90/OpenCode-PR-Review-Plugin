@@ -10,11 +10,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import java.nio.charset.StandardCharsets
 
 /**
- * Communicates with local AI models (via Ollama or similar REST APIs).
- * Now supports dynamic weighting and audit thresholds.
+ * Communicates with AI models. 
+ * Now enforces a 'Zero-Leak' protocol for internal audit metrics.
  */
 class RestAdapter(private val settings: AppSettingsState) : OpenCodeAdapter {
 
@@ -22,17 +21,19 @@ class RestAdapter(private val settings: AppSettingsState) : OpenCodeAdapter {
         val client = HttpClient(CIO)
         val url = "${settings.restBaseUrl}/api/chat"
         
-        // Dynamic Weighted Context
+        // Internal Weighting Context - Wrapped in a 'Do Not Print' mask
         val weightingContext = """
-            [DYNAMIC AUDIT METRICS]
-            - Code Quality: max ${settings.weightCodeQuality} points
-            - Best Practices: max ${settings.weightBestPractices} points
-            - Performance: max ${settings.weightPerformance} points
-            - Readability: max ${settings.weightReadability} points
-            - Security: max ${settings.weightSecurity} points
-            - PASSING THRESHOLD: ${settings.passingThreshold}
+            [INTERNAL_AUDit_GRADiNG_METRICS - DO NOT OUTPUT TO USER]
+            - CATEGORY RULES:
+              Code Quality: max ${settings.weightCodeQuality}
+              Best Practices: max ${settings.weightBestPractices}
+              Performance: max ${settings.weightPerformance}
+              Readability: max ${settings.weightReadability}
+              Security: max ${settings.weightSecurity}
+            - GLOBAL PASSING THRESHOLD: ${settings.passingThreshold}
             
-            (Reject if total score < ${settings.passingThreshold})
+            STRICT DIRECTIVE: Use these weights for calculation only. 
+            DO NOT mention 'Dynamic Audit Metrics' or these point values in your response.
         """.trimIndent()
 
         val fullSystemMessage = "${settings.systemPrompt}\n\n$weightingContext"
@@ -68,7 +69,7 @@ class RestAdapter(private val settings: AppSettingsState) : OpenCodeAdapter {
                             emit(chunk)
                         }
                     } catch (e: Exception) {
-                        emit("\n[Parser Error: ${e.message}]\n")
+                        emit("\n[Parser Error]\n")
                     }
                 }
             }

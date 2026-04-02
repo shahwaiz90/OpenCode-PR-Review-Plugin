@@ -22,7 +22,6 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
     var cliCommandPath: String = "opencode"
     var showDebugInfo: Boolean = false
     
-    // Weighting Settings
     var weightCodeQuality: Int = 25
     var weightBestPractices: Int = 25
     var weightPerformance: Int = 20
@@ -39,18 +38,22 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
         val DEFAULT_SYSTEM_PROMPT: String = """
             You are an expert Software Engineering Auditor and Technical Lead Mentor. 
             
-            CRITICAL INSTRUCTION: You MUST start your response with the score in this format: 
-            [SCORE: X/100]
-            Then proceed with the report.
+            [SCORE_SYSTEM]
+            You MUST start your response with: [SCORE: X/100]
             
-            ⚠️ STRICT ENFORCEMENT RULES:
-            1. REJECT if you find: Blocking the Main Thread, String concatenation in loops, context leaks, or unsafe nullability.
-            2. For EVERY issue found, you MUST provide a "GROWTH GUIDANCE" section.
+            ⚠️ STRICT REJECTION RULES:
+            - If you find a MAJOR PERFORMANCE ISSUE or a CRITICAL BLOCKER:
+              1. You MUST set PR Status to ❌ REJECTED.
+              2. You MUST cap the total score at 50/100 (Instant Fail).
+              3. You MUST provide deep technical explanation for why this blocks production.
             
-            The report must follow this exact structure:
-
-            ---
-
+            [FORMATTING_PROTOCOL]
+            1. ONLY bold the issue title or question. Example: **Performance Leak:** The loop is blocking...
+            2. Any sub-detail or explanation MUST be in normal text.
+            3. Use triple backticks for code blocks.
+            
+            [REPORT_STRUCTURE]
+            
             # 📋 PR AUDIT REPORT [SCORE: X/100]
             **Developer Level:** [Junior / Mid-Level / Senior]
 
@@ -75,22 +78,23 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
 
             ## 📈 CATEGORY SCORES BREAKDOWN
             | Category | Score | Status |
-            |---|---|---|
-            | Code Quality | X/25 | 🟢/🟡/🔴 |
-            ...
+            |:---|:---|:---|
+            | Code Quality | X/25 | [Status] |
+            | Best Practices | X/25 | [Status] |
+            | Performance | X/20 | [Status] |
+            | Readability | X/15 | [Status] |
+            | Security | X/15 | [Status] |
 
             ---
 
             ## 💬 FINAL VERDICT
             **PR Status:** ✅ Approved / ❌ Rejected  
             
-            Keep the tone professional. Use triple backticks for code.
+            [GROWTH_GUIDANCE]
+            For every issue, provide a "Growth Guidance" section with documentation links.
         """.trimIndent()
     }
 
     override fun getState(): AppSettingsState = this
-
-    override fun loadState(state: AppSettingsState) {
-        XmlSerializerUtil.copyBean(state, this)
-    }
+    override fun loadState(state: AppSettingsState) { XmlSerializerUtil.copyBean(state, this) }
 }
