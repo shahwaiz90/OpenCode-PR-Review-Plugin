@@ -14,15 +14,46 @@
 
 ---
 
-## 🏗️ Getting Started
+## 🏎️ Running as an Open Source Developer
+
+If you are contributing to OpenCode, follow these steps to build and run the plugin in a development environment:
+
+### 1. Project Setup
+- **IDE**: We recommend using **IntelliJ IDEA (2023.x or later)** or **Android Studio**.
+- **JDK**: Ensure you are using **JDK 17 or 18**.
+- **Clone**: `git clone https://github.com/shahwaiz90/OpenCode-PR-Review-Plugin.git`
+
+### 2. Core Gradle Commands
+Open your terminal in the project root and use these commands:
+
+#### 🚀 Launch the Sandbox IDE
+This command compiles the plugin and opens a fresh instance of the IDE with the plugin pre-installed.
+```bash
+./gradlew runIde
+```
+
+#### 🏗️ Build the Plugin Distribution
+This generates a release-ready `.zip` that can be manually installed in any Android Studio instance.
+```bash
+./gradlew buildPlugin
+```
+*Output Location: `build/distributions/OpenCode-PR-Review-X.X.X.zip`*
+
+#### 🧩 Project Structure for Contributors
+- **`src/main/kotlin/com/opencode/ui/`**: Contains the **ReviewPanel** (UI) and **ReviewToolWindowFactory** (Tool Window initialization).
+- **`src/main/kotlin/com/opencode/adapter/`**: Contains the **RestAdapter** (AI Bridge) and **CliAdapter**.
+- **`src/main/kotlin/com/opencode/util/`**: Contains the **HtmlReportGenerator** (Elite Dashboard logic) and **GitDiffUtil**.
+- **`src/main/kotlin/com/opencode/settings/`**: Contains **AppSettingsState** (Persistent Weights & Prompts).
+- **`src/main/kotlin/com/opencode/editor/`**: Contains **ReviewLineMarkerProvider** (Gutter Icons) and **QuickFixIntentionAction**.
+
+---
+
+## 🏗️ Getting Started (User Guide)
 
 ### 1. Setup Local AI (Ollama)
 OpenCode PR Review works best with a local, private LLM for absolute code security.
 - **Download Ollama**: [ollama.com](https://ollama.com/)
-- **Pull a Coding Model**: Open your terminal and run:
-  ```bash
-  ollama pull qwen2.5-coder:latest
-  ```
+- **Pull a Coding Model**: Run: `ollama pull qwen2.5-coder:latest`
 - **Verify**: Ensure the server is running at `http://localhost:11434`.
 
 ### 2. Configure the Plugin
@@ -31,30 +62,6 @@ OpenCode PR Review works best with a local, private LLM for absolute code securi
 3. Set your **Ollama Server URL**: `http://localhost:11434`.
 4. Choose your **Active AI Model**: `qwen2.5-coder:latest`.
 5. Dial in your **Audit Weighting & Thresholds** to match your team’s standards.
-6. Click **Apply**.
-
----
-
-## 🤝 Contribution Guide (What Files Do What)
-OpenCode is built for open-source growth! Here is where the magic happens:
-
-- **`src/main/kotlin/com/opencode/settings/AppSettingsState.kt`**: The "Source of Truth." This file contains the **Expert Auditor System Prompt** and the persistence logic for your weights and thresholds.
-- **`src/main/kotlin/com/opencode/adapter/RestAdapter.kt`**: The communication engine. This file bridges the plugin to Ollama, handles streaming, and injects your dynamic weighting context into every request.
-- **`src/main/kotlin/com/opencode/util/HtmlReportGenerator.kt`**: The report architect. This transforms AI Markdown into the **Professional Audit Dashboard** (handling tables, badges, and line numbers).
-- **`src/main/kotlin/com/opencode/ui/ReviewPanel.kt`**: The visual heart. It handles real-time streaming, the "Apply Fix" logic, and the "Expert Mentor" UI sections.
-- **`src/main/kotlin/com/opencode/actions/`**: Action triggers for right-click context menus, gutter icons, and tool-window actions.
-
----
-
-## 🛠️ Build & Run
-To compile the plugin from source:
-```bash
-./gradlew buildPlugin
-```
-To launch a sandbox IDE with the latest changes:
-```bash
-./gradlew runIde
-```
 
 ---
 

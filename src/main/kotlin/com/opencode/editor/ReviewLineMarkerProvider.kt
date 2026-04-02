@@ -4,118 +4,84 @@ import com.intellij.codeInsight.daemon.LineMarkerInfo
 import com.intellij.codeInsight.daemon.LineMarkerProvider
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.markup.GutterIconRenderer
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiMethod
-import com.intellij.psi.PsiNameIdentifierOwner
-import com.intellij.openapi.wm.ToolWindowManager
-import com.intellij.openapi.application.ApplicationManager
-import com.opencode.adapter.RestAdapter
-import com.opencode.settings.AppSettingsState
+import com.intellij.psi.impl.source.tree.LeafPsiElement
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.fileEditor.FileEditorManager
 import com.opencode.ui.ReviewPanel
 import com.opencode.ui.ReviewToolWindowFactory
+import com.opencode.adapter.RestAdapter
+import com.opencode.adapter.CliAdapter
+import com.opencode.settings.AppSettingsState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
-import org.jetbrains.kotlin.psi.KtNamedFunction
 
-import com.intellij.psi.PsiClass
-import com.intellij.psi.PsiFile
-import org.jetbrains.kotlin.psi.KtClass
-
+/**
+ * Provides a "Review with OpenCode" gutter icon for every Kotlin/Java function.
+ * Instantly triggers an expert audit of the specific function.
+ */
 class ReviewLineMarkerProvider : LineMarkerProvider {
-    private val scope = CoroutineScope(Dispatchers.Main)
 
     override fun getLineMarkerInfo(element: PsiElement): LineMarkerInfo<*>? {
-        // Target Kotlin or Java functions OR Classes
-        val result = when (element) {
-            is KtClass -> element.nameIdentifier to true
-            is PsiClass -> element.nameIdentifier to true
-            is KtNamedFunction -> element.nameIdentifier to false
-            is PsiMethod -> element.nameIdentifier to false
-            else -> null
-        } ?: return null
-
-        val identifier = result.first ?: return null
-        val isFileReview = result.second
-
-        val icon = if (isFileReview) AllIcons.Actions.PreviewDetails else AllIcons.Actions.Search
-        val tooltip = if (isFileReview) "OpenCode: Review Entire File" else "OpenCode: Review Function"
+        if (element !is PsiMethod && element !is org.jetbrains.kotlin.psi.KtNamedFunction) return null
+        
+        val identifier = when (element) {
+            is PsiMethod -> element.nameIdentifier ?: return null
+            is org.jetbrains.kotlin.psi.KtNamedFunction -> element.nameIdentifier ?: return null
+            else -> return null
+        }
 
         return LineMarkerInfo(
             identifier,
             identifier.textRange,
-            icon,
-            { tooltip },
-            { _, _ -> if (isFileReview) startFullFileReview(element.containingFile) else startQuickReview(element) },
+            AllIcons.Actions.Preview,
+            { "Review function with OpenCode Auditor" },
+            { _, _ -> performReview(element) },
             GutterIconRenderer.Alignment.LEFT,
-            { tooltip }
+            { "Expert Audit" }
         )
     }
 
-    private fun startFullFileReview(file: PsiFile) {
-        val project = file.project
+    private fun performReview(element: PsiElement) {
+        val project = element.project
+        val toolWindowManager = ToolWindowManager.getInstance(project)
+        val toolWindow = toolWindowManager.getToolWindow("OpenCode PR Review") ?: return
+        
+        toolWindow.show()
+        val reviewPanel = toolWindow.contentManager.getContent(0)?.component as? ReviewPanel ?: return
+        
+        val editor = FileEditorManager.getInstance(project).selectedTextEditor ?: return
+        val range = element.textRange
+        
+        reviewPanel.setTarget(editor, range.startOffset, range.endOffset)
+        reviewPanel.showHeader(element.containingFile.name)
+        reviewPanel.clear()
+
         val settings = AppSettingsState.instance
-        val adapter = RestAdapter(settings)
-        
-        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("OpenCode Review") ?: return
-        
-        toolWindow.show { 
-            val content = toolWindow.contentManager.getContent(0)
-            val panel = content?.component as? ReviewPanel ?: return@show
-            
-            panel.clear()
-            panel.appendText("📄 [Full File Review] Analyzing file: '${file.name}'...\n\n")
-            panel.setLoading(true)
+        val adapter = if (settings.mode == "REST") RestAdapter(settings) else CliAdapter(settings)
 
-            scope.launch {
-                try {
-                    adapter.review(file.text, file.name).collect { chunk ->
-                        panel.appendText(chunk)
+        val scope = CoroutineScope(Dispatchers.Main)
+        scope.launch {
+            try {
+                val code = element.text
+                val contextualPrompt = "FUNCTION REVIEW\n\n$code"
+                
+                adapter.review(contextualPrompt, element.containingFile.name)
+                    .onStart { reviewPanel.setLoading(true) }
+                    .onCompletion { reviewPanel.setLoading(false) }
+                    .collect { chunk ->
+                        reviewPanel.appendText(chunk)
                     }
-                } catch (e: Exception) {
-                    panel.appendText("\n❌ Review Failed: ${e.message}")
-                } finally {
-                    panel.setLoading(false)
-                }
-            }
-        }
-    }
-
-    private fun startQuickReview(function: PsiElement) {
-        val project = function.project
-        val settings = AppSettingsState.instance
-        val adapter = RestAdapter(settings)
-        
-        val toolWindow = ToolWindowManager.getInstance(project).getToolWindow("OpenCode PR Review") ?: return
-        
-        toolWindow.show { 
-            val content = toolWindow.contentManager.getContent(0)
-            val panel = content?.component as? ReviewPanel ?: return@show
-            
-            val editor = com.intellij.openapi.fileEditor.FileEditorManager.getInstance(project).selectedTextEditor
-            if (editor != null) {
-                panel.setTarget(editor, function.textRange.startOffset, function.textRange.endOffset)
-            }
-
-            val fileName = function.containingFile.name
-            panel.showHeader(fileName)
-            
-            val settings = AppSettingsState.instance
-            val endpoint = if (settings.restBaseUrl.endsWith("/")) "${settings.restBaseUrl}api/tags" else "${settings.restBaseUrl}/api/tags"
-            panel.appendText("🔍 [DEBUG] Model Discovery: $endpoint\n", isDebug = true)
-            
-            panel.setLoading(true)
-
-            scope.launch {
-                try {
-                    adapter.review(function.text, "function_review.kt").collect { chunk: String ->
-                        panel.appendText(chunk)
-                    }
-                } catch (e: Exception) {
-                    panel.appendText("\n❌ Review Failed: ${e.message}")
-                } finally {
-                    panel.setLoading(false)
-                }
+            } catch (e: Exception) {
+                reviewPanel.appendText("\n❌ ERROR: ${e.message}\n")
+            } finally {
+                reviewPanel.setLoading(false)
             }
         }
     }

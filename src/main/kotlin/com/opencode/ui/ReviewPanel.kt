@@ -11,6 +11,7 @@ import com.intellij.util.ui.AsyncProcessIcon
 import com.intellij.util.ui.JBUI
 import com.intellij.ide.BrowserUtil
 import com.opencode.util.HtmlReportGenerator
+import com.opencode.settings.AppSettingsState
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.Font
@@ -18,7 +19,7 @@ import javax.swing.*
 import java.awt.Color
 
 /**
- * Enhanced Review Panel with professional Grade HUD and Real-time Scoring.
+ * Professional Review Panel with Grade HUD and Debug mode support.
  */
 class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, true) {
 
@@ -31,7 +32,7 @@ class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, tr
     // The Score HUD
     private val scoreBadge = JBLabel("--").apply {
         font = font.deriveFont(Font.BOLD, 18f)
-        foreground = Color(0x64748b) // Slate gray
+        foreground = Color(0x64748b)
         border = JBUI.Borders.empty(4, 12)
     }
     private val scorePoints = JBLabel("Await Scan...").apply {
@@ -48,7 +49,6 @@ class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, tr
         val editorFactory = EditorFactory.getInstance()
         val document = editorFactory.createDocument("")
         editor = editorFactory.createEditor(document, project, com.intellij.openapi.fileTypes.PlainTextFileType.INSTANCE, false)
-        
         setupUI()
     }
 
@@ -69,16 +69,12 @@ class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, tr
         topPanel.add(leftPanel, BorderLayout.WEST)
         topPanel.add(rightPanel, BorderLayout.EAST)
         
-        val buttonBar = JPanel(FlowLayout(FlowLayout.RIGHT)).apply {
-            border = JBUI.Borders.empty(4)
-        }
+        val buttonBar = JPanel(FlowLayout(FlowLayout.RIGHT)).apply { border = JBUI.Borders.empty(4) }
         val exportBtn = JButton("📊 Export Dashboard").apply { addActionListener { exportToHtml() } }
         val applyBtn = JButton("🚀 Apply Strict Fix").apply { addActionListener { applySuggestedFix() } }
         val clearBtn = JButton("🧹 Clear").apply { addActionListener { clear() } }
         
-        buttonBar.add(clearBtn)
-        buttonBar.add(exportBtn)
-        buttonBar.add(applyBtn)
+        buttonBar.add(clearBtn); buttonBar.add(exportBtn); buttonBar.add(applyBtn)
 
         val bottomPanel = JPanel(BorderLayout())
         bottomPanel.add(buttonBar, BorderLayout.CENTER)
@@ -102,34 +98,31 @@ class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, tr
         scorePoints.text = "Initializing AI Auditor..."
     }
 
-    fun appendText(chunk: String) {
-        // Real-time Score Extraction Logic
+    /** Appends text with support for real-time score extraction and debug filtering */
+    fun appendText(chunk: String, isDebug: Boolean = false) {
+        val settings = AppSettingsState.instance
+        if (isDebug && !settings.showDebugInfo) return
+
         if (chunk.contains("[SCORE:")) {
             val scoreMatch = "\\[SCORE:\\s?(\\d+)/100\\]".toRegex().find(chunk)
             val scoreVal = scoreMatch?.groupValues?.get(1)?.toIntOrNull()
-            if (scoreVal != null) {
-                updateScoreUI(scoreVal)
-            }
+            if (scoreVal != null) updateScoreUI(scoreVal)
         }
 
         WriteCommandAction.runWriteCommandAction(project) {
             val document = editor.document
             document.insertString(document.textLength, chunk)
-            
-            // Auto-scroll to the end of the streaming review
-            val scrollModel = editor.scrollingModel
-            scrollModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
+            editor.scrollingModel.scrollToCaret(com.intellij.openapi.editor.ScrollType.MAKE_VISIBLE)
         }
     }
 
     private fun updateScoreUI(score: Int) {
         val grade = when {
-            score >= 90 -> "A+" to Color(0x10b981) // Green
-            score >= 80 -> "B" to Color(0x3b82f6)  // Blue
-            score >= 70 -> "C" to Color(0xf59e0b)  // Orange
-            else -> "F" to Color(0xef4444)         // Red
+            score >= 90 -> "A+" to Color(0x10b981)
+            score >= 80 -> "B" to Color(0x3b82f6)
+            score >= 70 -> "C" to Color(0xf59e0b)
+            else -> "F" to Color(0xef4444)
         }
-        
         SwingUtilities.invokeLater {
             scoreBadge.text = grade.first
             scoreBadge.foreground = grade.second
@@ -137,11 +130,7 @@ class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, tr
         }
     }
 
-    fun clear() {
-        WriteCommandAction.runWriteCommandAction(project) {
-            editor.document.setText("")
-        }
-    }
+    fun clear() { WriteCommandAction.runWriteCommandAction(project) { editor.document.setText("") } }
 
     fun setLoading(loading: Boolean) {
         loadingIcon.isVisible = loading
@@ -160,11 +149,8 @@ class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, tr
         val codeBlockRegex = "```([a-z]*)\\n([\\s\\S]*?)\\n```".toRegex()
         val allMatches = codeBlockRegex.findAll(fullText).toList()
         if (allMatches.isEmpty()) return
-
-        val fixMatch = allMatches.find { it.groupValues[1].lowercase() in listOf("kotlin", "kt", "java") }
-            ?: allMatches.find { m -> !m.groupValues[2].contains("curl ") }
-        
-        if (fixMatch != null && targetEditor != null) {
+        val fixMatch = allMatches.find { it.groupValues[1].lowercase() in listOf("kotlin", "kt", "java") } ?: allMatches[0]
+        if (targetEditor != null) {
             val replacement = fixMatch.groupValues[2].trimIndent()
             WriteCommandAction.runWriteCommandAction(project) {
                 targetEditor?.document?.replaceString(targetStart, targetEnd, replacement)
@@ -173,15 +159,13 @@ class ReviewPanel(private val project: Project) : SimpleToolWindowPanel(true, tr
     }
 }
 
-/** Utility layout for vertical stacking in header */
 class VerticalFlowLayout(val vgap: Int = 5, val hgap: Int = 0) : java.awt.LayoutManager2 {
     private val components = mutableListOf<java.awt.Component>()
     override fun addLayoutComponent(c: java.awt.Component, constraints: Any?) { components.add(c) }
     override fun removeLayoutComponent(c: java.awt.Component) { components.remove(c) }
     override fun addLayoutComponent(name: String?, c: java.awt.Component) { components.add(c) }
     override fun preferredLayoutSize(parent: java.awt.Container): java.awt.Dimension {
-        var h = vgap
-        var w = 0
+        var h = vgap; var w = 0
         components.forEach { h += it.preferredSize.height + vgap; w = maxOf(w, it.preferredSize.width) }
         return java.awt.Dimension(w + hgap * 2, h)
     }
