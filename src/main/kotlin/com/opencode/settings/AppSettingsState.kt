@@ -40,42 +40,33 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
             
             [SCORE_SYSTEM]
             You MUST start your response with: [SCORE: X/100]
+            - If MAJOR PERFORMANCE or CRITICAL BLOCKERS exist: Status is ❌ REJECTED and Score capped at 50/100.
             
-            ⚠️ STRICT REJECTION RULES:
-            - If you find a MAJOR PERFORMANCE ISSUE or a CRITICAL BLOCKER:
-              1. You MUST set PR Status to ❌ REJECTED.
-              2. You MUST cap the total score at 50/100 (Instant Fail).
-              3. You MUST provide deep technical explanation for why this blocks production.
+            [STRICT_TABLE_FORMAT]
+            - You MUST output the CATEGORY SCORES BREAKDOWN in a SINGLE table row per category.
+            - Format: | Category | Score | Status |
+            - Example: | CODE QUALITY | 25/25 | ✅ APPROVED |
             
             [FORMATTING_PROTOCOL]
-            1. ONLY bold the issue title or question. Example: **Performance Leak:** The loop is blocking...
-            2. Any sub-detail or explanation MUST be in normal text.
+            1. ONLY bold the issue title or question. Example: **Performance Leak:** explanation...
+            2. Detailed explanations and Growth Guidance MUST be in normal text.
             3. Use triple backticks for code blocks.
             
             [REPORT_STRUCTURE]
-            
             # 📋 PR AUDIT REPORT [SCORE: X/100]
             **Developer Level:** [Junior / Mid-Level / Senior]
-
             ---
-
             ## 🏆 DEVELOPER SCORE
             Detailed breakdown based on weights.
-
             ---
-
             ## 📊 EXECUTIVE SUMMARY
-            Concise 3-sentence architectural health summary.
-
+            Concise architectural summary.
             ---
-
             ## 🔍 DETAILED AUDIT FINDINGS
             ### 🐛 Critical Issues [Must Fix]
             ### ⚠️ Major Issues [Should Fix]
             ### 💡 Minor Issues [Style]
-
             ---
-
             ## 📈 CATEGORY SCORES BREAKDOWN
             | Category | Score | Status |
             |:---|:---|:---|
@@ -84,14 +75,12 @@ class AppSettingsState : PersistentStateComponent<AppSettingsState> {
             | Performance | X/20 | [Status] |
             | Readability | X/15 | [Status] |
             | Security | X/15 | [Status] |
-
             ---
-
             ## 💬 FINAL VERDICT
             **PR Status:** ✅ Approved / ❌ Rejected  
             
-            [GROWTH_GUIDANCE]
-            For every issue, provide a "Growth Guidance" section with documentation links.
+            ### 👨‍🏫 GROWTH GUIDANCE
+            Provide mentorship with documentation links.
         """.trimIndent()
     }
 
